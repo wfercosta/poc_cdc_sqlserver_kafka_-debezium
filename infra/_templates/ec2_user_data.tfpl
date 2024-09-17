@@ -1,0 +1,47 @@
+#!/bin/bash
+
+curl https://packages.microsoft.com/keys/microsoft.asc \
+    | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc
+
+curl https://packages.microsoft.com/config/ubuntu/22.04/prod.list \
+    | sudo tee /etc/apt/sources.list.d/mssql-release.list
+
+sudo killall apt-get
+sudo dpkg --configure -a
+sudo apt-get update  -y
+
+sudo ACCEPT_EULA=y DEBIAN_FRONTEND=noninteractive \
+    apt-get install -y \
+    --no-install-recommends \
+        mssql-tools \
+        unixodbc-dev
+
+sudo cat >> ~/.bashrc <<EOF 
+export PATH="$PATH:/opt/mssql-tools/bin"
+alias db="sqlcmd -S tcp:${db_address},${db_port} -U ${db_username} -P ${db_password}"
+EOF
+
+sudo cat > ~/db-initial-script.sql <<EOF
+IF NOT EXISTS(SELECT * FROM sys.databases WHERE name = 'Demo')
+  BEGIN
+    CREATE DATABASE [Demo]
+  END
+
+GO
+
+USE [Demo]
+GO
+
+IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Example' and xtype='U')
+BEGIN
+CREATE TABLE Example (
+  Id INT PRIMARY KEY IDENTITY (1, 1),
+  Name VARCHAR(100)
+)
+END
+EOF
+
+source ~/.bashrc
+
+db -i ~/db-initial-script.sql -o ~/db-initial-script.log
+
