@@ -24,15 +24,16 @@ EOF
 
 sudo cat > ~/db-initial-script.sql <<EOF
 IF NOT EXISTS(SELECT * FROM sys.databases WHERE name = 'Demo')
-  BEGIN
-    CREATE DATABASE [Demo]
-  END
+BEGIN
+  CREATE DATABASE [Demo]
+END
 GO
 
 USE [Demo]
 GO
 
-EXEC sp_changedbowner='${db_username}'
+EXEC sp_changedbowner '${db_username}'
+GO
 
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Example' and xtype='U')
 BEGIN
