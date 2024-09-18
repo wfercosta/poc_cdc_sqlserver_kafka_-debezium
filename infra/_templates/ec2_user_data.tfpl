@@ -32,9 +32,6 @@ GO
 USE [Demo]
 GO
 
-EXEC sp_changedbowner '${db_username}'
-GO
-
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Example' and xtype='U')
 BEGIN
 CREATE TABLE Example (
@@ -62,3 +59,6 @@ EOF
   -P ${db_password} \
   -i ~/db-initial-script.sql \
   -o ~/db-initial-script_on_bootstrap.log
+
+#EXEC sp_changedbowner @loginame= N'${db_username}'
+#GO

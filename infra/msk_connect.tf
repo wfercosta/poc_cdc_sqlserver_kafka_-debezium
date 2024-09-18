@@ -64,8 +64,8 @@ resource "aws_mskconnect_connector" "this" {
     "connector.class"                                 = "io.debezium.connector.sqlserver.SqlServerConnector",
     "database.hostname"                               = aws_db_instance.this.address,
     "database.port"                                   = aws_db_instance.this.port,
-    "database.user"                                   = local.username,
-    "database.password"                               = local.password,
+    "database.user"                                   = "${local.username}",
+    "database.password"                               = "${local.password}",
     "database.names"                                  = "Demo",
     "database.encrypt"                                = false,
     "topic.prefix"                                    = "fullfillment",
@@ -75,6 +75,9 @@ resource "aws_mskconnect_connector" "this" {
     "tasks.max"                                       = 3,
     "bootstrap.servers"                               = data.aws_msk_bootstrap_brokers.this.bootstrap_brokers_sasl_iam,
   }
+
+  # "database.user"                                   = "$${secretManager:${local.prefix}-rds-mssql-credentials-secret:username}",
+  #   "database.password"                               = "$${secretManager:${local.prefix}-rds-mssql-credentials-secret:password}",
 
   capacity {
     autoscaling {
@@ -130,4 +133,15 @@ resource "aws_mskconnect_connector" "this" {
     delete = "20m"
   }
 
+}
+
+resource "aws_mskconnect_worker_configuration" "example" {
+  name                    = "${local.prefix}-worker-configuration"
+  properties_file_content = <<EOT
+key.converter=org.apache.kafka.connect.storage.StringConverter
+value.converter=org.apache.kafka.connect.storage.StringConverter
+config.providers.secretManager.class=com.github.jcustenborder.kafka.config.aws.SecretsManagerConfigProvider
+config.providers=secretManager
+config.providers.secretManager.param.aws.region=us-east-1
+EOT
 }

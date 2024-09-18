@@ -25,6 +25,7 @@ module "iamsr" {
       policies_attachments = [
         "arn:aws:iam::${local.account_id}:policy/policy-msk-connect-s3",
         "arn:aws:iam::${local.account_id}:policy/policy-msk-iam-auth",
+        "arn:aws:iam::${local.account_id}:policy/policy-get-secret-value"
       ]
     }
   }
