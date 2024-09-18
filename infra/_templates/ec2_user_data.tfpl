@@ -27,8 +27,12 @@ IF NOT EXISTS(SELECT * FROM sys.databases WHERE name = 'Demo')
   BEGIN
     CREATE DATABASE [Demo]
   END
-
 GO
+
+USE [Demo]
+GO
+
+EXEC sp_changedbowner='${db_username}'
 
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Example' and xtype='U')
 BEGIN
@@ -37,17 +41,16 @@ CREATE TABLE Example (
   Name VARCHAR(100)
 )
 END
-
-USE [Demo]
 GO
 
-exec msdb.dbo.rds_cdc_enable_db 'Demo'
+EXEC msdb.dbo.rds_cdc_enable_db 'Demo'
 GO
 
-exec sys.sp_cdc_enable_table
+EXEC sys.sp_cdc_enable_table
     @source_schema = N'dbo',
     @source_name = N'Example',
-    @role_name = NULL;
+    @role_name = NULL,
+    @supports_net_changes = 1
 GO
 
 EOF
@@ -58,19 +61,3 @@ EOF
   -P ${db_password} \
   -i ~/db-initial-script.sql \
   -o ~/db-initial-script_on_bootstrap.log
-
-
-# CREATE LOGIN debezium WITH PASSWORD = 'debezium'
-# CREATE USER debezium FOR LOGIN debezium
-# ALTER ROLE [PROCESSADMIN] ADD MEMBER debezium
-# ALTER ROLE [SETUPADMIN] ADD MEMBER debezium
-# ALTER ROLE [DB_OWNER] ADD MEMBER debezium
-# GRANT VIEW DATABASE STATE to debezium
-
-# USE [master];
-# GRANT VIEW SERVER STATE TO debezium
-
-#https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.MasterAccounts.html
-#https://docs.aws.amazon.com/dms/latest/sbs/chap-rdssqlserver2s3datalake.steps.configuresource.html
-#https://debezium.io/documentation/reference/stable/connectors/sqlserver.html#_enabling_cdc_on_a_sql_server_table
-#https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Appendix.SQLServer.CommonDBATasks.CDC.html

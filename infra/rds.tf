@@ -31,7 +31,7 @@ resource "aws_db_subnet_group" "this" {
 # }
 
 resource "aws_db_instance" "this" {
-  db_name                = "${local.prefix}-rds-mssql"
+  identifier             = "${local.prefix}-rds-mssql"
   engine                 = "sqlserver-se"
   license_model          = "license-included"
   engine_version         = "15.00.4385.2.v1"
