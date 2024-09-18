@@ -19,6 +19,7 @@ sudo ACCEPT_EULA=y DEBIAN_FRONTEND=noninteractive \
 sudo cat >> ~/.bashrc <<EOF 
 export PATH="$PATH:/opt/mssql-tools/bin"
 alias db="sqlcmd -S tcp:${db_address},${db_port} -U ${db_username} -P ${db_password}"
+alias db-init="db -i ~/db-initial-script.sql -o ~/db-initial-script.log"
 EOF
 
 sudo cat > ~/db-initial-script.sql <<EOF
@@ -29,9 +30,6 @@ IF NOT EXISTS(SELECT * FROM sys.databases WHERE name = 'Demo')
 
 GO
 
-USE [Demo]
-GO
-
 IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='Example' and xtype='U')
 BEGIN
 CREATE TABLE Example (
@@ -39,9 +37,40 @@ CREATE TABLE Example (
   Name VARCHAR(100)
 )
 END
+
+USE [Demo]
+GO
+
+exec msdb.dbo.rds_cdc_enable_db 'Demo'
+GO
+
+exec sys.sp_cdc_enable_table
+    @source_schema = N'dbo',
+    @source_name = N'Example',
+    @role_name = NULL;
+GO
+
 EOF
 
-source ~/.bashrc
+/opt/mssql-tools/bin/sqlcmd \
+  -S tcp:${db_address},${db_port} \
+  -U ${db_username} \
+  -P ${db_password} \
+  -i ~/db-initial-script.sql \
+  -o ~/db-initial-script_on_bootstrap.log
 
-db -i ~/db-initial-script.sql -o ~/db-initial-script.log
 
+# CREATE LOGIN debezium WITH PASSWORD = 'debezium'
+# CREATE USER debezium FOR LOGIN debezium
+# ALTER ROLE [PROCESSADMIN] ADD MEMBER debezium
+# ALTER ROLE [SETUPADMIN] ADD MEMBER debezium
+# ALTER ROLE [DB_OWNER] ADD MEMBER debezium
+# GRANT VIEW DATABASE STATE to debezium
+
+# USE [master];
+# GRANT VIEW SERVER STATE TO debezium
+
+#https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/UsingWithRDS.MasterAccounts.html
+#https://docs.aws.amazon.com/dms/latest/sbs/chap-rdssqlserver2s3datalake.steps.configuresource.html
+#https://debezium.io/documentation/reference/stable/connectors/sqlserver.html#_enabling_cdc_on_a_sql_server_table
+#https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Appendix.SQLServer.CommonDBATasks.CDC.html

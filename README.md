@@ -1,1 +1,1 @@
-# poc_cdc_sqlserver_kafka_debezium
+# POC CDC

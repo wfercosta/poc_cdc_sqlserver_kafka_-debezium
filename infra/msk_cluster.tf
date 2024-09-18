@@ -18,6 +18,15 @@ resource "aws_security_group" "msk" {
   }
 }
 
+
+resource "aws_msk_configuration" "this" {
+  name              = "${local.prefix}-msk-configuration"
+  server_properties = <<EOF
+auto.create.topics.enable = true
+delete.topic.enable       = true
+EOF
+}
+
 resource "aws_msk_serverless_cluster" "this" {
   cluster_name = "${local.prefix}-msk"
 

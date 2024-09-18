@@ -1,0 +1,19 @@
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "kafka-cluster:*Topic*",
+                "kafka-cluster:AlterGroup",
+                "kafka-cluster:ReadData",
+                "kafka-cluster:DescribeCluster",
+                "kafka-cluster:AlterCluster",
+                "kafka-cluster:DescribeGroup",
+                "kafka-cluster:Connect",
+                "kafka-cluster:WriteData"
+            ],
+            "Resource": "*"
+        }
+    ]
+}

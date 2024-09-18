@@ -48,7 +48,8 @@ resource "aws_security_group" "debezium" {
 }
 
 resource "aws_cloudwatch_log_group" "this" {
-  name = "/${local.prefix}/msk-connectors/debezium"
+  name         = "/${local.prefix}/msk-connectors/debezium"
+  skip_destroy = false
 }
 
 data "aws_msk_bootstrap_brokers" "this" {
@@ -56,18 +57,24 @@ data "aws_msk_bootstrap_brokers" "this" {
 }
 
 resource "aws_mskconnect_connector" "this" {
-  name                 = "${local.prefix}-debezium-sqlserver"
-  kafkaconnect_version = "2.7.1"
-  connector_configuration = {
-    "connector.class"                = "tutorial.buildon.aws.streaming.kafka.MyFirstKafkaConnector"
-    "key.converter"                  = "org.apache.kafka.connect.converters.ByteArrayConverter"
-    "value.converter"                = "org.apache.kafka.connect.json.JsonConverter"
-    "value.converter.schemas.enable" = "false"
-    "first.required.param"           = "Kafka"
-    "second.required.param"          = "Connect"
-    "tasks.max"                      = "3"
-  }
+  name                       = "${local.prefix}-debezium-sqlserver"
+  kafkaconnect_version       = "2.7.1"
   service_execution_role_arn = element(module.iamsr.role_arn, 1)
+  connector_configuration = {
+    "connector.class"                                 = "io.debezium.connector.sqlserver.SqlServerConnector",
+    "database.hostname"                               = aws_db_instance.this.address,
+    "database.port"                                   = aws_db_instance.this.port,
+    "database.user"                                   = local.username,
+    "database.password"                               = local.password,
+    "database.names"                                  = "Demo",
+    "database.encrypt"                                = false,
+    "topic.prefix"                                    = "fullfillment",
+    "table.include.list"                              = "dbo.Example",
+    "schema.history.internal.kafka.bootstrap.servers" = data.aws_msk_bootstrap_brokers.this.bootstrap_brokers_sasl_iam,
+    "schema.history.internal.kafka.topic"             = "schemahistory.fullfillment",
+    "tasks.max"                                       = 3,
+    "bootstrap.servers"                               = data.aws_msk_bootstrap_brokers.this.bootstrap_brokers_sasl_iam,
+  }
 
   capacity {
     autoscaling {
@@ -94,11 +101,11 @@ resource "aws_mskconnect_connector" "this" {
   }
 
   kafka_cluster_client_authentication {
-    authentication_type = "NONE"
+    authentication_type = "IAM"
   }
 
   kafka_cluster_encryption_in_transit {
-    encryption_type = "PLAINTEXT"
+    encryption_type = "TLS"
   }
 
   plugin {
@@ -118,9 +125,9 @@ resource "aws_mskconnect_connector" "this" {
   }
 
   timeouts {
-    create = "5m"
-    update = "5m"
-    delete = "5m"
+    create = "20m"
+    update = "20m"
+    delete = "20m"
   }
 
 }

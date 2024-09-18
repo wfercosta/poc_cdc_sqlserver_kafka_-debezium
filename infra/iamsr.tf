@@ -8,7 +8,8 @@ module "iamsr" {
 
   policies = {
     policy-get-secret-value = "./_iamsr/policies/policy-get-secret-value.tftpl",
-    policy-msk-connect-s3   = "./_iamsr/policies/policy-msk-connect-s3.tftpl"
+    policy-msk-connect-s3   = "./_iamsr/policies/policy-msk-connect-s3.tftpl",
+    policy-msk-iam-auth     = "./_iamsr/policies/policy-msk-iam-auth.tfpl",
   }
 
   roles = {
@@ -23,6 +24,7 @@ module "iamsr" {
       trust_role = "./_iamsr/assume_roles/trust-kafka-connect.tftpl"
       policies_attachments = [
         "arn:aws:iam::${local.account_id}:policy/policy-msk-connect-s3",
+        "arn:aws:iam::${local.account_id}:policy/policy-msk-iam-auth",
       ]
     }
   }
